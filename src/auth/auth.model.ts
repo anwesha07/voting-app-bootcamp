@@ -1,48 +1,4 @@
-import mongoose, { Schema } from 'mongoose';
-
-const userSchema = new Schema({
-  userName: {
-    type: String,
-    required: true,
-    min: 3,
-    max: 30,
-  },
-  password: {
-    type: String,
-    required: true,
-    min: 8,
-  },
-  email: {
-    type: String,
-    min: 5,
-    required: true,
-    unique: true,
-  },
-  aadhaar: {
-    type: String,
-    minlength: 12,
-    maxlength: 12,
-    required: true,
-    validate: {
-      validator(value: string) {
-        return /^[0-9]+$/.test(value);
-      },
-      message: 'Field should contain exactly 12 digits',
-    },
-    unique: true,
-  },
-  token: {
-    type: String,
-    default: null,
-  },
-  isAdmin: {
-    type: Boolean,
-    default: false,
-  },
-});
-
-const User = mongoose.model('User', userSchema);
-
+import db from '../db'
 const saveNewUser = async (userDetails: {
   userName: string,
   password: string,
@@ -51,25 +7,131 @@ const saveNewUser = async (userDetails: {
   token?: string,
   isAdmin?: boolean,
 }) => {
-  const newUser = new User(userDetails);
-  return newUser.save();
+  try {
+    // Prepare the SQL statement
+    const query = `
+      INSERT INTO users (username, password, email, aadhaar, token, isadmin)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *;
+    `;
+
+    // Execute the query with the user details as parameters
+    const result = await db.one(query, [
+      userDetails.userName,
+      userDetails.password,
+      userDetails.email,
+      userDetails.aadhaar,
+      userDetails.token || null,
+      userDetails.isAdmin || false,
+    ]);
+
+    return result;
+  } catch (error) {
+    console.error('Error saving new user:', error);
+    throw error;
+  }
 };
 
-const getUserByUserName = async (userName: string) => User.findOne({ userName });
-const getUserByEmail = async (email: string) => User.findOne({ email });
-const getUserByAadhaar = async (aadhaar: string) => User.findOne({ aadhaar });
+const getUserByUserId = async (userId: number) => {
+  try {
+    // Prepare the SQL statement
+    const query = `
+      SELECT *
+      FROM users
+      WHERE id = $1;
+    `;
 
-const getUserByUserId = async (userId: string) => User.findById(userId);
+    // Execute the query with the username as a parameter
+    const result = await db.oneOrNone(query, [userId]);
 
-const updateToken = (id: mongoose.Types.ObjectId, token: string) =>
-  User.findByIdAndUpdate(id, { token }, { new: true });
+    return result;
+  } catch (error) {
+    console.error('Error getting user by userId:', error);
+    throw error;
+  }
+};
 
-const resetTokenByUserId = (id: string) =>
-  User.findByIdAndUpdate(id, { token: null }, { new: true });
+const getUserByEmail = async (email: string) => {
+  try {
+    // Prepare the SQL statement
+    const query = `
+      SELECT *
+      FROM users
+      WHERE email = $1;
+    `;
+
+    // Execute the query with the username as a parameter
+    const result = await db.oneOrNone(query, [email]);
+
+    return result;
+  } catch (error) {
+    console.error('Error getting user by email:', error);
+    throw error;
+  }
+};
+
+const getUserByAadhaar = async (aadhaar: string) => {
+  try {
+    // Prepare the SQL statement
+    const query = `
+      SELECT *
+      FROM users
+      WHERE aadhaar = $1;
+    `;
+
+    // Execute the query with the username as a parameter
+    const result = await db.oneOrNone(query, [aadhaar]);
+
+    return result;
+  } catch (error) {
+    console.error('Error getting user by aadhaar:', error);
+    throw error;
+  }
+};
+
+const updateToken = async (id: number, token: string) => {
+  try {
+    // Prepare the SQL statement
+    const query = `
+      UPDATE users
+      SET token = $1
+      WHERE id = $2
+      RETURNING *;
+    `;
+
+    // Execute the query with the token and id as parameters
+    const result = await db.one(query, [token, id]);
+
+    return result;
+  } catch (error) {
+    console.error('Error updating token:', error);
+    throw error;
+  }
+};
+
+const resetTokenByUserId = async (id: number) => {
+  try {
+    // Prepare the SQL statement
+    const query = `
+      UPDATE users
+      SET token = null
+      WHERE id = $1
+      RETURNING *;
+    `;
+
+    // Execute the query with the token and id as parameters
+    const result = await db.one(query, [id]);
+
+    return result;
+  } catch (error) {
+    console.error('Error removing token:', error);
+    throw error;
+  }
+};
+
 
 export {
   saveNewUser,
-  getUserByUserName,
   getUserByEmail,
   getUserByAadhaar,
   updateToken,

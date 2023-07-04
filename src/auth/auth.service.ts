@@ -46,7 +46,7 @@ aadhaar,
 console.log(newUser);
 const token = jwt.sign(
 {
-userId: newUser._id,
+userId: newUser.id.toString(),
 },
 process.env.TOKEN_KEY as string,
 {
@@ -81,7 +81,7 @@ const loginUserService = async (email: string, password: string) => {
   throw new UnauthorisedException('incorrect credentials');
 };
 
-const logoutUserService = async (userId: string) =>
+const logoutUserService = async (userId: number) =>
 resetTokenByUserId(userId);
 
 

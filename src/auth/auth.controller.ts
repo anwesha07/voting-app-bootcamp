@@ -24,7 +24,7 @@ res.json(loggedInUser);
 
 const logoutUserController = asyncWrap(async (req: CustomRequest, res: Response) => {
 const userId = req.user?.id;
-console.log(userId)
+console.log(`userId: ${userId}`)
 const loggedOutUser = await logoutUserService(userId);
 res.status(200).json(loggedOutUser);
 });
