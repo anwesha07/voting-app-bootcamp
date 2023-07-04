@@ -25,12 +25,10 @@ aadhaar: string
 ) => {
 // check whether email is unique or not
 const userByEmail = await getUserByEmail(email);
-console.log(`userByEmail ${userByEmail}`);
 if (userByEmail) throw new ConflictException('User already exists!');
 
 // check whether aadhaar is unique or not
 const userByAadhaar = await getUserByAadhaar(aadhaar);
-console.log(`userByAadhaar ${userByAadhaar}`);
 
 if (userByAadhaar) throw new ConflictException('User already exists!');
 

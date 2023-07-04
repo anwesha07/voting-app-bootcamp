@@ -13,7 +13,6 @@ const saveCandidate = async (candidateDetails: CandidateInterface) => {
     const values = [candidateDetails.name, candidateDetails.email, candidateDetails.gender, candidateDetails.age];
 
     const result = await db.one(query, values);
-    console.log(result);
 
     return result;
   } catch (error) {
@@ -62,16 +61,30 @@ const getCandidateByCandidateId = async (candidateId: number) => {
 };
 
 
-// const getCandidateIdsInArray = async (
-//   candidateArray: string[]
-// ) => {
+const checkCandidateIdsValidity = async (candidateIds: number[]) => {
+  try {
+    const candidateIdString = candidateIds.join(',');
 
-//   throw new ForbiddenException('route not complete');
-// }
+    const query = `
+      SELECT COUNT(*) as count
+      FROM candidates
+      WHERE id IN (${candidateIdString})
+    `;
+
+    const result = await db.one(query);
+    const count = parseInt(result.count);
+
+    return count === candidateIds.length;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
 
 export {
   saveCandidate,
   getCandidateByEmail,
   getCandidateByCandidateId,
-  // getCandidateIdsInArray,
+  checkCandidateIdsValidity,
 };

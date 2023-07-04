@@ -1,97 +1,142 @@
-import mongoose, { Schema, ObjectId, FlattenMaps } from 'mongoose';
-import CandidateInterface from '../candidate/candidate.interface';
-
-const voteEventSchema: Schema = new Schema({
-  name: {
-    type: String,
-    required: true,
-    min: 3,
-    max: 30,
-    unique: true,
-  },
-  startDate: {
-    type: Date,
-    required: true,
-  },
-  endDate: {
-    type: Date,
-    required: true,
-  },
-  candidates: {
-    type: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Candidate',
-      },
-    ],
-    required: true,
-  },
-  votedBy: {
-    type: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-      },
-    ],
-  },
-  votes: {
-    type: Map,
-    of: Number,
-    default: 0,
-    max: 1,
-  },
-});
-
-const VoteEvents = mongoose.model('VoteEvents', voteEventSchema);
-
-const saveNewVoteEvent = async (eventDetails: {
+import db from '../db';
+interface VoteEventInterface{
   name: string,
   startDate: Date,
   endDate: Date,
-  candidates: CandidateInterface[],
-  votedBy?: ObjectId[],
-  votes: { [key: string]: number },
-}) => {
-  const newEvent = new VoteEvents(eventDetails);
-  return newEvent.save();
+}
+
+
+const saveNewVoteEvent = async (eventDetails: VoteEventInterface) => {
+  try {
+    // Prepare the SQL statement
+    const query = `
+      INSERT INTO voting_events (name, startdate, enddate)
+      VALUES ($1, $2, $3)
+      RETURNING *;
+    `;
+
+    // Execute the query with the user details as parameters
+    const result = await db.one(query, [
+      eventDetails.name,
+      new Date(eventDetails.startDate).toISOString(),
+      new Date(eventDetails.endDate).toISOString(),
+    ]);
+
+    // save candidate ids in voting_event_candidate array
+
+    return result;
+  } catch (error) {
+    console.error('Error saving new voting event:', error);
+    throw error;
+  }
+};
+
+const saveVoteEventCandidates = async (
+  eventId: number,
+  candidateIds: number[]
+) => {
+  try {
+    // Create an array of VotingEventCandidate objects
+    const valueList = candidateIds.map(
+      (id) => `(${id}, ${eventId})`
+    );
+    const query = `
+      INSERT INTO voting_event_candidates (candidate_id, event_id)
+      VALUES
+        ${valueList.join(', ')}
+      RETURNING *
+    `;
+
+    // Execute the query
+    return db.any(query);
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+const getVoteEventByName = async (name: string) => {
+  try {
+    const query = `
+      SELECT * FROM voting_events
+      WHERE name = $1
+    `;
+
+    const result = await db.oneOrNone(query, name);
+
+    return result;
+  } catch (error) {
+    console.error(`Error fetching vote event by name: ${error}`);
+    throw error;
+  }
 };
 
 const getActiveVoteEvents = async (
-  currentDate: Number,
-  userId: string
+  currentDate: Date,
+  userId: number
 ) => {
-  const currentEvents = VoteEvents.find(
-    {
-      startDate: { $lte: currentDate },
-      endDate: { $gte: currentDate },
-      votedBy: { $ne: userId },
-    },
-    '_id name startDate endDate'
-  );
-  return currentEvents;
+  try {
+    const query = `
+      SELECT id, name, startDate, endDate
+      FROM voting_events
+      WHERE startDate <= $1 AND endDate >= $1
+    `;
+
+    const values = [currentDate, userId];
+
+    const result = await db.any(query, values);
+
+    return result;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
 };
 
-const getVoteEventByName = async (name: string) =>
-  VoteEvents.findOne({ name });
 
-const getVoteEventById = async (eventId: string) =>
-  VoteEvents.findById(eventId, { votes: 0, __v: 0 }).populate('candidates');
+const getVoteEventById = async (eventId: number) => {
+  try {
+    // const query = `
+      
+    // `;
 
-const voteCandidate = async (
-  userId: string,
-  candidateId: string,
-  voteEventId: string
-) =>
-  VoteEvents.findOneAndUpdate(
-    { _id: voteEventId },
-    { $inc: { [`votes.${candidateId}`]: 1 }, $push: { votedBy: userId } },
-    { new: true }
-  );
+    const query1 = `
+      SELECT * FROM voting_events WHERE id = $1
+    `;
+    const query2 = `
+      SELECT c.*
+      FROM voting_event_candidates vc
+      LEFT JOIN candidates c ON vc.candidate_id = c.id
+      WHERE vc.event_id = $1
+    `;
+
+    const votingEvent = await db.oneOrNone(query1, eventId);
+    const candidates = await db.any(query2, eventId);
+
+    return { ...votingEvent, candidates };
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+
+// const voteCandidate = async (
+//   userId: string,
+//   candidateId: string,
+//   voteEventId: string
+// ) =>
+//   VoteEvents.findOneAndUpdate(
+//     { _id: voteEventId },
+//     { $inc: { [`votes.${candidateId}`]: 1 }, $push: { votedBy: userId } },
+//     { new: true }
+//   );
 
 export {
   saveNewVoteEvent,
   getActiveVoteEvents,
   getVoteEventByName,
   getVoteEventById,
-  voteCandidate,
+  saveVoteEventCandidates
+  // voteCandidate,
 };

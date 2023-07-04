@@ -7,7 +7,7 @@ const validateVoteEventBody = async (req: Request, _res: Response, next: NextFun
     name: Joi.string().alphanum().min(3).max(30).required(),
     startDate: Joi.date().greater('now').required(),
     endDate: Joi.date().greater('now').greater(Joi.ref('startDate')).required(),
-    candidates: Joi.array().items(Joi.string()).min(2),
+    candidates: Joi.array().items(Joi.number()).min(2).required(),
   });
 
   try {

@@ -16,7 +16,6 @@ const createNewCandidate = async (user: any, name: string, email: string, age: n
   }
   // verify candidate does not exist already
   const candidate = await getCandidateByEmail(email);
-  console.log(candidate);
   if (candidate) throw new ConflictException('Candidate already exists!');
 
   // create new candidate entry
@@ -32,7 +31,6 @@ const createNewCandidate = async (user: any, name: string, email: string, age: n
 const getCandidate = async (candidateId: number) => {
   const candidate = await getCandidateByCandidateId(candidateId);
   if (!candidate) {
-    console.log(candidate);
     throw new NotFoundException('Candidate credentials do not match!');
   }
   return candidate;

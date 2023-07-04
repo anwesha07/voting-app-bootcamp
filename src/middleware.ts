@@ -15,7 +15,6 @@ const authenticateUser = async (req: CustomRequest, _res: Response, next: NextFu
 const token = req.headers['x-token'] as string;
   try {
     const { userId } = <UserIdJwtPayload>jwt.verify(token, process.env.TOKEN_KEY as string);
-    console.log(`userId: ${userId}`)
 
     const user = await validateToken(token, parseInt(userId));
     req.user = user;
