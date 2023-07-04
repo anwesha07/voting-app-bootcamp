@@ -4,7 +4,7 @@ import {
   getVoteEventsController,
   createVoteEventController,
   getVoteEventByIdController,
-  // voteCandidateController,
+  voteCandidateController,
 } from './voteEvents.controller';
 import {
   validateVoteEventBody,
@@ -32,11 +32,11 @@ voteEventRouter.get('/active', authenticateUser, getVoteEventsController);
 voteEventRouter.get('/:id', authenticateUser, getVoteEventByIdController);
 
 // vote a candidate
-// voteEventRouter.post(
-//   '/:id/vote',
-//   authenticateUser,
-//   validateVoteCandidateBody,
-//   voteCandidateController
-// );
+voteEventRouter.post(
+  '/:id/vote',
+  authenticateUser,
+  validateVoteCandidateBody,
+  voteCandidateController
+);
 
 export default voteEventRouter;

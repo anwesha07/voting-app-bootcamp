@@ -11,7 +11,8 @@ import {
   saveNewVoteEvent,
   getVoteEventById,
   saveVoteEventCandidates,
-  // voteCandidate,
+  hasUserVoted,
+  voteCandidate,
 } from './voteEvents.model';
 
 const getVoteEventsService = async (userId: number) => {
@@ -53,37 +54,35 @@ const getVoteEventByIdService = async (eventId: number) => {
   return voteEvent;
 };
 
-// const voteCandidateService = async (candidateId: string, userId: string, eventId: string) => {
-//   // check whether eventId is valid
-//   const voteEvent = await getVoteEventById(eventId);
-//   if (!voteEvent) throw new NotFoundException('Vote Event Id is invalid');
+const voteCandidateService = async (candidateId: number, userId: number, eventId: number) => {
+  // check whether eventId is valid
+  const voteEvent = await getVoteEventById(eventId);
+  if (!voteEvent) throw new NotFoundException('Vote Event Id is invalid');
 
-//   // check whether the voting event is active
-//   const today = new Date().getTime();
-//   if (voteEvent.startDate > today || voteEvent.endDate < today) {
-//     throw new ForbiddenException('Voting for this event is not active');
-//   }
+  // check whether the voting event is active
+  const today = new Date().getTime();
+  if (new Date(voteEvent.startDate).getTime() > today || new Date(voteEvent.endDate).getTime() < today) {
+    throw new ForbiddenException('Voting for this event is not active');
+  }
 
-//   // check whether the user has casted a vote
-//   if (voteEvent.votedBy.includes(userId)) {
-//     throw new ForbiddenException('Vote has already been cast by the user');
-//   }
+  // check whether the user has casted a vote
+  if(await hasUserVoted(userId, eventId)) throw new ForbiddenException('User has already voted!');
 
-//   // check whether the candidate id is valid
-//   const candidateExists = voteEvent.candidates.find(
-//     (candidate: any) => candidate._id.toString() === candidateId
-//   );
-//   if (!candidateExists) {
-//     throw new BadRequestException('Invalid candidate');
-//   }
+  // check whether the candidate id is valid
+  const candidateExists = voteEvent.candidates.find(
+    (candidate: any) => candidate.id === candidateId
+  );
+  if (!candidateExists) {
+    throw new BadRequestException('Invalid candidate');
+  }
 
-//   // add the vote
-//   await voteCandidate(userId, candidateId, eventId);
-// };
+  // add the vote
+  await voteCandidate(userId, candidateId, eventId);
+};
 
 export {
   getVoteEventsService,
   createVoteEventService,
   getVoteEventByIdService,
-  // voteCandidateService,
+  voteCandidateService,
 };

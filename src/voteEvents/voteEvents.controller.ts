@@ -4,7 +4,7 @@ import { ForbiddenException } from '../utils/exceptions';
 import {
   getVoteEventsService,
   createVoteEventService,
-  // voteCandidateService,
+  voteCandidateService,
   getVoteEventByIdService,
 } from './voteEvents.service';
 
@@ -39,17 +39,17 @@ const getVoteEventByIdController = asyncWrap(async (req: CustomRequest, res: Res
   res.json(voteEvent);
 });
 
-// const voteCandidateController = asyncWrap(async (req: CustomRequest, res: Response) => {
-//   const candidateId = req.body.candidate;
-//   const userId = req.user._id;
-//   const eventId = req.params.id;
-//   await voteCandidateService(candidateId, userId, eventId);
-//   res.status(201).json({ message: 'Vote casted successfully' });
-// });
+const voteCandidateController = asyncWrap(async (req: CustomRequest, res: Response) => {
+  const candidateId = parseInt(req.body.candidate);
+  const userId = parseInt(req.user.id);
+  const eventId = parseInt(req.params.id);
+  await voteCandidateService(candidateId, userId, eventId);
+  res.status(201).json({ message: 'Vote casted successfully' });
+});
 
 export {
   getVoteEventsController,
   createVoteEventController,
   getVoteEventByIdController,
-  // voteCandidateController,
+  voteCandidateController,
 };

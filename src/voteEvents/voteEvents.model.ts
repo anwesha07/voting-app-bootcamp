@@ -1,4 +1,5 @@
 import db from '../db';
+import { InternalServerErrorException } from '../utils/exceptions';
 interface VoteEventInterface{
   name: string,
   startDate: Date,
@@ -96,10 +97,6 @@ const getActiveVoteEvents = async (
 
 const getVoteEventById = async (eventId: number) => {
   try {
-    // const query = `
-      
-    // `;
-
     const query1 = `
       SELECT * FROM voting_events WHERE id = $1
     `;
@@ -120,23 +117,63 @@ const getVoteEventById = async (eventId: number) => {
   }
 };
 
+const hasUserVoted = async (
+  userId: number,
+  eventId: number
+) => {
+  try {
+    const query = `
+    SELECT * FROM voted_by
+    WHERE user_id = ${userId} AND event_id = ${eventId}
+  `
+  console.log(query)
+  const vote = await db.oneOrNone(query);
+  console.log({ vote });
+  return vote !== null;
+  } catch (error) {
+    throw new InternalServerErrorException((error as Error).message)
+  }
+}
 
-// const voteCandidate = async (
-//   userId: string,
-//   candidateId: string,
-//   voteEventId: string
-// ) =>
-//   VoteEvents.findOneAndUpdate(
-//     { _id: voteEventId },
-//     { $inc: { [`votes.${candidateId}`]: 1 }, $push: { votedBy: userId } },
-//     { new: true }
-//   );
+const voteCandidate = async (
+  userId: number,
+  candidateId: number,
+  voteEventId: number
+) => {
+  db.tx(t => {
+    // creating a sequence of transaction queries:
+    const q1 = t.one(`
+      UPDATE voting_event_candidates
+      SET vote_count = vote_count + 1
+      WHERE candidate_id = $1
+      AND event_id = $2
+      RETURNING candidate_id
+    `, [candidateId, voteEventId]);
+    const q2 = t.one(`
+      INSERT INTO voted_by (user_id, event_id)
+      VALUES ($1, $2)
+      RETURNING id
+    `, [userId, voteEventId]);
+
+    // returning a promise that determines a successful transaction:
+    return t.batch([q1, q2]); // all of the queries are to be resolved;
+  })
+    .then(data => {
+        // success, COMMIT was executed
+        console.log(data)
+    })
+    .catch(error => {
+        // failure, ROLLBACK was executed
+        throw new InternalServerErrorException(error.message)
+    });
+};
 
 export {
   saveNewVoteEvent,
   getActiveVoteEvents,
   getVoteEventByName,
   getVoteEventById,
-  saveVoteEventCandidates
-  // voteCandidate,
+  saveVoteEventCandidates,
+  hasUserVoted,
+  voteCandidate,
 };

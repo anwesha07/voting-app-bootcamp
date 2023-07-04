@@ -21,7 +21,7 @@ const validateVoteEventBody = async (req: Request, _res: Response, next: NextFun
 
 const validateVoteCandidateBody = async (req: Request, _res: Response, next: NextFunction) => {
   const validateVoteCandidateSchema = Joi.object({
-    candidate: Joi.string().required(),
+    candidate: Joi.number().required(),
   });
 
   try {
