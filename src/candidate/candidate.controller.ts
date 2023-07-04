@@ -15,7 +15,7 @@ const createCandidateController = asyncWrap(async (req: CustomRequest, res: Resp
 });
 
 const fetchCandidateController = asyncWrap(async (req: CustomRequest, res: Response) => {
-  const candidateId = req.params.id;
+  const candidateId = parseInt(req.params.id);
   const candidate = await getCandidate(candidateId);
   res.status(200).json(candidate);
 });

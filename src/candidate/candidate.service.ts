@@ -11,7 +11,7 @@ import {
 
 const createNewCandidate = async (user: any, name: string, email: string, age: number, gender: string) => {
   // check whether creator is admin
-  if (!user.isAdmin) {
+  if (!user.isadmin) {
     throw new ForbiddenException('Not allowed to register candidates');
   }
   // verify candidate does not exist already
@@ -29,7 +29,7 @@ const createNewCandidate = async (user: any, name: string, email: string, age: n
   return newCandidate;
 };
 
-const getCandidate = async (candidateId: string) => {
+const getCandidate = async (candidateId: number) => {
   const candidate = await getCandidateByCandidateId(candidateId);
   if (!candidate) {
     console.log(candidate);
